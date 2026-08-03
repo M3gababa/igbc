@@ -1,8 +1,11 @@
 /**
  * Trigger: Post Login (synchronous/blocking)
  *
- * Renders the progressive-profiling Form if and only if the user does not have the
- * "IGBC - Customer" role yet — i.e. keeps prompting until they've completed onboarding.
+ * Renders the progressive-profiling Form if the user does not have the "IGBC - Customer"
+ * role yet (keeps prompting until they've completed onboarding), OR if the login request
+ * carries `custom_param=newCustomer` — a manual override to force the Form even for an
+ * existing customer. No client in this repo sets that query param yet; it's a hook for a
+ * future "redo onboarding" flow.
  */
 const CUSTOMER_ROLE = 'IGBC - Customer';
 const PROGRESSIVE_PROFILING_FORM_ID = 'ap_aNvo3mBfAwXULxC3sMSC18';

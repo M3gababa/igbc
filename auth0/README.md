@@ -17,7 +17,9 @@ with the Action that renders it.
   - `post-login_add-claims.js` — adds custom ID/access token claims (roles, RCU, address,
     consents) from `app_metadata`/`user_metadata`, and records last-login geo on the user.
   - `post-login_progressive-profiling-newUser.js` — renders `post-login_progressive-profiling-newUser.json`
-    if and only if the user does not (yet) have the `IGBC - Customer` role.
+    if the user does not (yet) have the `IGBC - Customer` role, OR if the login request carries
+    `custom_param=newCustomer` (a manual override to force the Form again; no client in this repo
+    sets that param yet).
   - `post-login_stepup-mfa.js` — requires MFA (`api.multifactor.enable('any')`) when the client
     requests step-up via `acr_values`, or when the login geolocates to Antarctica.
 - **Forms** (`.json`) — Auth0 Forms definitions used within those flows.
