@@ -6,15 +6,16 @@ Cross-platform reference for running everything **locally**: `api/` and `webapp/
 
 ---
 
-## Quick start: `local-deploy.sh`
+## Quick start: `scripts/local-deploy.sh`
 
-`local-deploy.sh` (in this folder) wraps the whole `api/` + `webapp/` local Docker flow below —
-create the shared network, wait for `api/`'s health check, start `webapp/` pointed at it, wire in
-the corporate CA cert automatically. Use it instead of typing out the `docker build`/`docker run`
+`scripts/local-deploy.sh` wraps the whole `api/` + `webapp/` local Docker flow below — create the
+shared network, wait for `api/`'s health check, start `webapp/` pointed at it, wire in the
+corporate CA cert automatically. Use it instead of typing out the `docker build`/`docker run`
 commands in the sections below by hand; those sections still exist to show what the script is
-actually doing, and for running just one side on its own.
+actually doing, and for running just one side on its own. Run it from the `scripts/` folder.
 
 ```bash
+cd scripts
 ./local-deploy.sh build    # rebuild both images and replace the running containers
 ./local-deploy.sh up       # (or bare ./local-deploy.sh) — (re)start from the existing images,
                             #   no rebuild; run 'build' first if igbc-api:local/igbc-webapp:local
@@ -29,7 +30,8 @@ Use `build` the first time, and again any time you change code in `api/` or `web
 after a reboot — without waiting on a rebuild. Both are idempotent — they replace any existing
 `igbc-api`/`igbc-webapp` containers, so it's safe to run either again without manually tearing
 down first. Either one exits early with a clear message if `api/.env`, `webapp/bff/.env`, or
-`prisma_certificates.pem` is missing, and won't start `webapp/` until `api/`'s `/health` responds.
+`scripts/prisma_certificates.pem` is missing, and won't start `webapp/` until `api/`'s `/health`
+responds.
 
 ---
 
@@ -38,8 +40,8 @@ down first. Either one exits early with a clear message if `api/.env`, `webapp/b
 If `docker run` for `api/` or `webapp/` fails with `self-signed certificate in certificate chain`
 (seen hitting `/auth/login` or any outbound Auth0/Mongo/FGA call), it's a TLS-intercepting
 corporate proxy sitting between the container and the internet — the host trusts its root CA (via
-the OS keychain), the container's minimal CA bundle doesn't. `prisma_certificates.pem` in this
-folder is that CA chain (Okta's decryption proxy). Mount it into the container and point Node at it
+the OS keychain), the container's minimal CA bundle doesn't. `scripts/prisma_certificates.pem`
+is that CA chain (Okta's decryption proxy). Mount it into the container and point Node at it
 via `NODE_EXTRA_CA_CERTS` — both commands below already include this. Don't use
 `NODE_TLS_REJECT_UNAUTHORIZED=0` instead; that disables TLS validation entirely rather than just
 trusting this one extra CA.
@@ -53,7 +55,7 @@ cd api
 docker build -t igbc-api:local .
 docker run --rm -p 4000:4000 --env-file .env -e PORT=4000 \
   -e NODE_EXTRA_CA_CERTS=/certs/prisma_certificates.pem \
-  -v "$(pwd)/../prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
+  -v "$(pwd)/../scripts/prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
   igbc-api:local
 ```
 
@@ -86,7 +88,7 @@ docker network create igbc-net   # once
 docker run -d --rm --name igbc-api --network igbc-net -p 4000:4000 \
   --env-file ../api/.env -e PORT=4000 \
   -e NODE_EXTRA_CA_CERTS=/certs/prisma_certificates.pem \
-  -v "$(pwd)/../prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
+  -v "$(pwd)/../scripts/prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
   igbc-api:local
 
 docker run --rm -p 3000:3000 --network igbc-net --env-file bff/.env \
@@ -94,7 +96,7 @@ docker run --rm -p 3000:3000 --network igbc-net --env-file bff/.env \
   -e API_BASE_URL=http://igbc-api:4000 \
   -e APP_BASE_URL=http://localhost:3000 \
   -e NODE_EXTRA_CA_CERTS=/certs/prisma_certificates.pem \
-  -v "$(pwd)/../prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
+  -v "$(pwd)/../scripts/prisma_certificates.pem:/certs/prisma_certificates.pem:ro" \
   igbc-webapp:local
 ```
 

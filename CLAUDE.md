@@ -136,7 +136,7 @@ building from source, hence the Dockerfiles.
   `api/DEPLOYMENT.md` and `webapp/DEPLOYMENT.md` are **AWS-only** (ECR push, Secrets Manager, ECS
   Express Mode service creation, ACM/ALB/Route 53 custom-domain wiring). Don't add local-run
   content back into the per-service docs — that duplication is what this split was fixing.
-- **`IGBC/local-deploy.sh`** — wraps the full local Docker flow (build both images, network,
+- **`IGBC/scripts/local-deploy.sh`** — wraps the full local Docker flow (build both images, network,
   health-check wait, run both, `up`/`down`/`logs`/`status`) so `IGBC/DEPLOYMENT.md`'s manual
   commands don't have to be typed by hand each time.
 - **Every `.env` value goes into AWS Secrets Manager** for both services, not just the
@@ -168,8 +168,8 @@ building from source, hence the Dockerfiles.
 - **Corporate TLS-intercepting proxy note (local dev only):** if `docker run` for either service
   fails with `self-signed certificate in certificate chain` on any outbound HTTPS call
   (Auth0/Mongo/FGA), it's a TLS-inspecting corporate proxy — the host trusts its root CA via the OS
-  keychain, the container's minimal CA bundle doesn't. `IGBC/prisma_certificates.pem` (Okta's
-  decryption proxy CA chain) fixes this via `NODE_EXTRA_CA_CERTS`, already wired into
+  keychain, the container's minimal CA bundle doesn't. `IGBC/scripts/prisma_certificates.pem`
+  (Okta's decryption proxy CA chain) fixes this via `NODE_EXTRA_CA_CERTS`, already wired into
   `local-deploy.sh` and documented in `IGBC/DEPLOYMENT.md`. This is an AWS-deployment non-issue —
   Fargate tasks won't sit behind this proxy.
 

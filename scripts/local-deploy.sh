@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build and run api/ + webapp/ Docker images locally. See DEPLOYMENT.md for the manual
-# version of every step this script runs.
+# Build and run api/ + webapp/ Docker images locally. See ../DEPLOYMENT.md for the manual
+# version of every step this script runs. Run from this scripts/ folder.
 #
 # Usage:
 #   ./local-deploy.sh [build|up|down|logs|status]   (default: up)
@@ -13,8 +13,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 NETWORK=igbc-net
 CERT_FILE="$(pwd)/prisma_certificates.pem"
-API_ENV="api/.env"
-WEBAPP_ENV="webapp/bff/.env"
+API_ENV="../api/.env"
+WEBAPP_ENV="../webapp/bff/.env"
 API_CONTAINER=igbc-api
 WEBAPP_CONTAINER=igbc-webapp
 API_PORT=4000
@@ -80,10 +80,10 @@ start_containers() {
 
 cmd_build() {
   log "Building igbc-api..."
-  docker build -q -t igbc-api:local ./api >/dev/null
+  docker build -q -t igbc-api:local ../api >/dev/null
 
   log "Building igbc-webapp..."
-  docker build -q -t igbc-webapp:local ./webapp >/dev/null
+  docker build -q -t igbc-webapp:local ../webapp >/dev/null
 
   start_containers
 }

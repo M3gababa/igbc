@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Rebuild, push, and force-redeploy api/ and/or webapp/ onto their EXISTING ECS Express Mode
-# services. This is only the "Ongoing" redeploy loop from aws_deployment_tasks.md — initial setup
-# (ECR repos, Secrets Manager, ECS service creation, ACM/ALB/Route 53) is not done here and must
-# have already happened once (services must already exist), or `update-service` will fail.
+# services. This is only the "Ongoing" redeploy loop from ../aws_deployment_tasks.md — initial
+# setup (ECR repos, Secrets Manager, ECS service creation, ACM/ALB/Route 53) is not done here and
+# must have already happened once (services must already exist), or `update-service` will fail.
+# Run from this scripts/ folder.
 #
 # Usage:
 #   ./aws-redeploy.sh [api|webapp|all]   (default: all)
@@ -53,16 +54,16 @@ TARGET="${1:-all}"
 case "$TARGET" in
   api)
     ecr_login
-    redeploy api ./api
+    redeploy api ../api
     ;;
   webapp)
     ecr_login
-    redeploy webapp ./webapp
+    redeploy webapp ../webapp
     ;;
   all)
     ecr_login
-    redeploy api ./api
-    redeploy webapp ./webapp
+    redeploy api ../api
+    redeploy webapp ../webapp
     ;;
   *)
     echo "Usage: $0 [api|webapp|all]" >&2

@@ -216,11 +216,13 @@ written into this file, only read from the `.env` files that already hold them.
 
 ## Ongoing (not part of initial deploy)
 
-`aws-redeploy.sh` (in this folder) wraps the redeploy loop below — build, tag, push, force a new
+`scripts/aws-redeploy.sh` wraps the redeploy loop below — build, tag, push, force a new
 ECS deployment, wait for it to stabilize. Requires the initial deploy (Phases 0–2) to have already
-happened at least once; it only updates existing ECS services, it doesn't create them.
+happened at least once; it only updates existing ECS services, it doesn't create them. Run it from
+the `scripts/` folder.
 
 ```bash
+cd scripts
 ./aws-redeploy.sh api      # rebuild + redeploy just api/
 ./aws-redeploy.sh webapp   # rebuild + redeploy just webapp/
 ./aws-redeploy.sh          # or: ./aws-redeploy.sh all — both
