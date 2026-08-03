@@ -1,0 +1,316 @@
+{
+  "version": "4.0.0",
+  "form": {
+    "name": "IGBC - Sign Up",
+    "languages": {
+      "primary": "en"
+    },
+    "nodes": [
+      {
+        "id": "step_FF9v",
+        "type": "STEP",
+        "coordinates": {
+          "x": -239,
+          "y": -358
+        },
+        "alias": "New step",
+        "config": {
+          "components": [
+            {
+              "id": "image_FjkN",
+              "category": "BLOCK",
+              "type": "IMAGE",
+              "config": {
+                "src": "https://github.com/M3gababa/igbc-webapp/blob/main/frontend/public/igbc-logo.png?raw=true",
+                "position": "CENTER",
+                "height": 100
+              }
+            },
+            {
+              "id": "rich_text_e4I2",
+              "category": "BLOCK",
+              "type": "RICH_TEXT",
+              "config": {
+                "content": "<h1 style=\"text-align:center;\"><strong>IGBC</strong></h1><p>Welcome to the <u>InterGalactic Banking Clan</u>. IOHPUHA</p><p></p><p>In order for you to open an banking account, contact support, and run any transaction, we need you to give us a few information about you.</p>"
+              }
+            },
+            {
+              "id": "divider_8ULU",
+              "category": "BLOCK",
+              "type": "DIVIDER",
+              "config": {
+                "text": "Personal Information"
+              }
+            },
+            {
+              "id": "text_firstname",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "Firstname",
+              "required": true,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "text_lastname",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "Lastname",
+              "required": true,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "tel_phoneNumber",
+              "category": "FIELD",
+              "type": "TEL",
+              "label": "Phone Number",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "country_picker": true
+              }
+            },
+            {
+              "id": "divider_udH4",
+              "category": "BLOCK",
+              "type": "DIVIDER",
+              "config": {
+                "text": "Address"
+              }
+            },
+            {
+              "id": "text_street",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "Street",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "text_city",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "City",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "text_zipcode",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "Zipcode",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "text_country",
+              "category": "FIELD",
+              "type": "TEXT",
+              "label": "Country",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "multiline": false
+              }
+            },
+            {
+              "id": "next_button_bfo3",
+              "category": "BLOCK",
+              "type": "NEXT_BUTTON",
+              "config": {
+                "text": "Continue"
+              }
+            },
+            {
+              "id": "jump_button_jD3s",
+              "category": "BLOCK",
+              "type": "JUMP_BUTTON",
+              "config": {
+                "text": "Cancel",
+                "next_node": "$ending",
+                "style": {
+                  "background_color": "#e53e3e"
+                }
+              }
+            }
+          ],
+          "next_node": "step_1WqU"
+        }
+      },
+      {
+        "id": "step_1WqU",
+        "type": "STEP",
+        "coordinates": {
+          "x": 394,
+          "y": 318
+        },
+        "alias": "New step",
+        "config": {
+          "components": [
+            {
+              "id": "image_XNgo",
+              "category": "BLOCK",
+              "type": "IMAGE",
+              "config": {
+                "src": "https://github.com/M3gababa/igbc-webapp/blob/main/frontend/public/igbc-logo.png?raw=true",
+                "position": "CENTER",
+                "height": 100
+              }
+            },
+            {
+              "id": "rich_text_UVRR",
+              "category": "BLOCK",
+              "type": "RICH_TEXT",
+              "config": {
+                "content": "<h1 style=\"text-align:center;\"><strong>IGBC</strong></h1><p>In order for you to use our services, please review the following Terms of Use. By creating an account, you ...</p>"
+              }
+            },
+            {
+              "id": "boolean_cgu",
+              "category": "FIELD",
+              "type": "BOOLEAN",
+              "label": "Terms of Service (CGU)",
+              "hint": "<p>I have read and accepted the <a href=\"https://www.loremipsum.de/index_en.html\" target=\"_blank\">Terms of Service</a> (CGU) associated to IGBC.</p>",
+              "required": true,
+              "sensitive": false,
+              "config": {
+                "default_value": false
+              }
+            },
+            {
+              "id": "boolean_gdpr",
+              "category": "FIELD",
+              "type": "BOOLEAN",
+              "label": "GDPR Data Processing",
+              "hint": "<p>I have read and accepted the rules related to <a href=\"https://www.loremipsum.de/index_en.html\" target=\"_blank\">GDPR and Data Processing</a> associated to IGBC.</p>",
+              "required": true,
+              "sensitive": false,
+              "config": {
+                "default_value": false
+              }
+            },
+            {
+              "id": "boolean_notif",
+              "category": "FIELD",
+              "type": "BOOLEAN",
+              "label": "Notifications",
+              "hint": "<p>I accept to be contacted by email and/or phone by the employees of IGBC.</p>",
+              "required": false,
+              "sensitive": false,
+              "config": {
+                "default_value": false
+              }
+            },
+            {
+              "id": "next_button_dIp9",
+              "category": "BLOCK",
+              "type": "NEXT_BUTTON",
+              "config": {
+                "text": "Continue"
+              }
+            },
+            {
+              "id": "jump_button_1AKv",
+              "category": "BLOCK",
+              "type": "JUMP_BUTTON",
+              "config": {
+                "text": "Cancel",
+                "next_node": "$ending",
+                "style": {
+                  "background_color": "#e53e3e"
+                }
+              }
+            }
+          ],
+          "next_node": "flow_lUP3"
+        }
+      },
+      {
+        "id": "flow_lUP3",
+        "type": "FLOW",
+        "coordinates": {
+          "x": 994,
+          "y": -151
+        },
+        "alias": "New flow",
+        "config": {
+          "flow_id": "#FLOW-1#",
+          "next_node": "$ending"
+        }
+      }
+    ],
+    "start": {
+      "next_node": "step_FF9v",
+      "coordinates": {
+        "x": -845,
+        "y": 158
+      }
+    },
+    "ending": {
+      "resume_flow": true,
+      "coordinates": {
+        "x": 1423,
+        "y": -58
+      }
+    }
+  },
+  "flows": {
+    "#FLOW-1#": {
+      "name": "IGBC - New Customer",
+      "actions": [
+        {
+          "id": "update_user_newCustomer",
+          "type": "AUTH0",
+          "action": "UPDATE_USER",
+          "allow_failure": false,
+          "mask_output": false,
+          "params": {
+            "connection_id": "#CONN-1#",
+            "user_id": "{{context.user.user_id}}",
+            "changes": {
+              "name": "{{fields.text_firstname}} {{fields.text_lastname}}",
+              "given_name": "{{fields.text_firstname}}",
+              "family_name": "{{fields.text_lastname}}",
+              "user_metadata": {
+                "address": {
+                  "city": "{{fields.text_city}}",
+                  "street": "{{fields.text_street}}",
+                  "country": "{{fields.text_country}}",
+                  "zipcode": "{{fields.text_zipcode}}"
+                },
+                "consents": {
+                  "cgu": "{{fields.boolean_cgu}}",
+                  "gdpr": "{{fields.boolean_gdpr}}",
+                  "udpated": "{{ functions.now() }}",
+                  "newsletter": "{{fields.boolean_notif}}"
+                },
+                "phonenumber": "{{fields.tel_phoneNumber.international_number}}"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "connections": {
+    "#CONN-1#": {
+      "id": "ac_kRnGZiyhyg9m66LxbXDWwP",
+      "app_id": "AUTH0",
+      "name": "Auth0 - bduvey-training"
+    }
+  }
+}
