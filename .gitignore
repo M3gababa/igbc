@@ -1,0 +1,18 @@
+# Child projects — each has its own git repo, tracked separately
+/android/
+/ios/
+/webapp/
+/api/
+/mcp/
+
+# OS
+.DS_Store
+
+# Editor / IDE
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# Secrets / env
+.env
+.env.*
