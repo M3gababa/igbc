@@ -27,10 +27,30 @@ ecr_login() {
     docker login --username AWS --password-stdin "$ECR_REGISTRY" >/dev/null
 }
 
+# Express Mode always appends a random suffix to the service name typed in the console
+# (e.g. "igbc-api" -> "igbc-api-b749"), so the exact name can't be hardcoded — resolve it
+# by prefix match against the cluster's live services instead.
+resolve_service_name() {
+  local prefix="$1"
+  local match
+  match="$(aws ecs list-services --cluster "$ECS_CLUSTER" --region "$AWS_REGION" \
+    --output text --query 'serviceArns[]' | \
+    tr '\t' '\n' | sed 's#.*/##' | grep -E "^${prefix}(-[A-Za-z0-9]+)?\$" | head -n1)"
+
+  if [[ -z "$match" ]]; then
+    echo "[aws-redeploy] ERROR: no ECS service matching '$prefix' (or '$prefix-<suffix>') found in cluster '$ECS_CLUSTER'." >&2
+    exit 1
+  fi
+
+  echo "$match"
+}
+
 redeploy() {
   local name="$1" dir="$2"
   local image="igbc-$name"
   local repo="$ECR_REGISTRY/$image"
+  local service
+  service="$(resolve_service_name "$image")"
 
   log "Building $image from $dir (linux/amd64 — Express Mode has no ARM64 picker)..."
   docker buildx build -q --platform linux/amd64 -t "$image" "$dir" >/dev/null
@@ -39,14 +59,14 @@ redeploy() {
   docker tag "$image:latest" "$repo:latest"
   docker push "$repo:latest" >/dev/null
 
-  log "Forcing new deployment of ECS service $image..."
-  aws ecs update-service --cluster "$ECS_CLUSTER" --service "$image" \
+  log "Forcing new deployment of ECS service $service..."
+  aws ecs update-service --cluster "$ECS_CLUSTER" --service "$service" \
     --force-new-deployment --region "$AWS_REGION" >/dev/null
 
-  log "Waiting for $image to stabilize (rolling deploy — can take a few minutes)..."
-  aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$image" --region "$AWS_REGION"
+  log "Waiting for $service to stabilize (rolling deploy — can take a few minutes)..."
+  aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$service" --region "$AWS_REGION"
 
-  log "$image redeployed."
+  log "$service redeployed."
 }
 
 TARGET="${1:-all}"
