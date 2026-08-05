@@ -123,10 +123,13 @@ cd android
 ```
 
 Then run via Android Studio's ▶ Run button (or `./gradlew installDebug` + launch manually) on an
-emulator or physical device. Login + the original 7 screens work end-to-end against Auth0; the
-newer redesigned screens (per `SCREENS.md`) currently run on **mock data** — `api/` isn't yet
-reachable from mobile (not published anywhere Android can hit), so there's nothing to point at
-`http://localhost:4000` yet even on an emulator. See `android/CLAUDE.md`'s TODO section.
+emulator or physical device. The app talks to the live `api/` at `https://api.igbc.sheev.fr` by
+default (`BuildConfig.BASE_URL`) — no local `api/` container needed. Login, the full SCREENS.md
+nav redesign, and real account/transfer/payment data all work end-to-end. To point it at a local
+`api/` instead (e.g. one started via this file's `api/` section above), change the
+`buildConfigField` in `app/build.gradle.kts` — on an emulator use `http://10.0.2.2:4000` (not
+`localhost`) to reach the host machine. See `android/CLAUDE.md`'s "Resolved" section; Guardian
+push stays stubbed pending Firebase.
 
 ---
 

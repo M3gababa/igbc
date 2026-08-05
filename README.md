@@ -15,13 +15,13 @@ Full architecture, Auth0 tenant config, shared design tokens, and cross-platform
 Each platform is its own git repository, checked out as a subfolder here. Start a session inside
 a platform's folder to work on it — its own `CLAUDE.md` loads alongside this root one.
 
-| Platform | Folder | Stack | Docs |
+| Platform | GitHub repo | Stack | Docs |
 |---|---|---|---|
-| API | [`api/`](api/) | Fastify/JS + MongoDB, Auth0 JWT + FGA | [`api/CLAUDE.md`](api/CLAUDE.md) |
-| Web | [`webapp/`](webapp/) | Vue 3 + Fastify BFF | [`webapp/CLAUDE.md`](webapp/CLAUDE.md) |
-| Android | [`android/`](android/) | Kotlin, Jetpack Compose, Koin | [`android/CLAUDE.md`](android/CLAUDE.md) |
-| iOS | [`ios/`](ios/) | Swift, SwiftUI | [`ios/CLAUDE.md`](ios/CLAUDE.md) |
-| MCP server | [`mcp/`](mcp/) | Model Context Protocol server (not started) | [`mcp/CLAUDE.md`](mcp/CLAUDE.md) |
+| API | [`igbc-api`](https://github.com/M3gababa/igbc-api) | Fastify/JS + MongoDB, Auth0 JWT + FGA | [`api/CLAUDE.md`](https://github.com/M3gababa/igbc-api/blob/main/CLAUDE.md) |
+| Web | [`igbc-webapp`](https://github.com/M3gababa/igbc-webapp) | Vue 3 + Fastify BFF | [`webapp/CLAUDE.md`](https://github.com/M3gababa/igbc-webapp/blob/main/CLAUDE.md) |
+| Android | [`igbc-android`](https://github.com/M3gababa/igbc-android) | Kotlin, Jetpack Compose, Koin | [`android/CLAUDE.md`](https://github.com/M3gababa/igbc-android/blob/main/CLAUDE.md) |
+| iOS | [`igbc-ios`](https://github.com/M3gababa/igbc-ios) | Swift, SwiftUI | [`ios/CLAUDE.md`](https://github.com/M3gababa/igbc-ios/blob/main/CLAUDE.md) |
+| MCP server | [`igbc-mcp`](https://github.com/M3gababa/igbc-mcp) | Model Context Protocol server (not started) | [`mcp/CLAUDE.md`](https://github.com/M3gababa/igbc-mcp/blob/main/CLAUDE.md) |
 
 See [`CLAUDE.md`](CLAUDE.md)'s Platforms table for current build status of each.
 
@@ -44,7 +44,6 @@ IGBC/
 ├── DEPLOYMENT.md          Local run instructions (Docker for api/webapp, native for android/ios)
 ├── SCREENS.md             Canonical screen list/navigation for mobile + web
 ├── THEME.md               Shared color palette and contrast rules
-├── aws_deployment_tasks.md   AWS ECS Express Mode setup + ongoing redeploy steps
 └── architecture.html      Standalone architecture diagram
 ```
 
@@ -57,8 +56,9 @@ IGBC/
 
 - **Auth0 tenant, callback URLs, SDK quirks per platform:** [`CLAUDE.md`](CLAUDE.md)
 - **Running everything locally:** [`DEPLOYMENT.md`](DEPLOYMENT.md) and [`scripts/`](scripts/)
-- **Deploying `api/`/`webapp/` to AWS:** `api/DEPLOYMENT.md`, `webapp/DEPLOYMENT.md`,
-  [`aws_deployment_tasks.md`](aws_deployment_tasks.md)
+- **Deploying `api/`/`webapp/` to AWS:** `api/DEPLOYMENT.md`, `webapp/DEPLOYMENT.md` — both
+  services are already live (see root `CLAUDE.md` "Deployment"); redeploys use
+  `scripts/aws-redeploy.sh`
 - **Screens and navigation:** [`SCREENS.md`](SCREENS.md)
 - **Colors and contrast rules:** [`THEME.md`](THEME.md)
 - **What to build next on a given platform:** that platform's own `CLAUDE.md` TODO section

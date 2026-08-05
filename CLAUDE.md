@@ -9,10 +9,10 @@ The IGBC (Star Wars — InterGalactic Banking Clan) theme is a story wrapper for
 
 | Platform | Folder | Stack | Status |
 |---|---|---|---|
-| Android | `android/` | Kotlin, Jetpack Compose, Koin | ✅ Login + original 7 screens working, Guardian stubbed pending Firebase. 🔧 Nav/screen UX redesign pending (mock data, no live API from mobile yet) — see `android/CLAUDE.md` TODO section |
+| Android | `android/` | Kotlin, Jetpack Compose, Koin | ✅ Fully wired to the live `api/` — SCREENS.md/THEME.md nav redesign, real data, and Management-API-backed Security/MFA/sessions all shipped 2026-08-04, with `webapp/` parity on Security but not yet on Profile edit/consent (still decorative on Android) or step-up MFA on mutations. Guardian still stubbed pending Firebase — see `android/CLAUDE.md`'s "Resolved" section |
 | iOS | `ios/` | Swift, SwiftUI | ✅ Login (custom scheme, temporary) + original 7 screens working, Guardian stubbed pending APNs — see `ios/CLAUDE.md`. 🔧 Nav/screen UX redesign pending (mock data, no live API from mobile yet) — see `ios/CLAUDE.md` TODO section |
-| Web | `webapp/` | Vue 3 + Fastify BFF | ✅ Login/session/debug working via BFF. ✅ Full SCREENS.md/THEME.md redesign shipped 2026-07-27 — 13 routes, master-detail Accounts, Transfers/Send/Cancel, Payment Contest, Activity, Dashboard analytics, all proxied through the BFF — see `webapp/CLAUDE.md` "Resolved" section. Adapted same-day to `api/`'s balance-mutation change (below) |
-| API | `api/` | Fastify/JS + MongoDB | ✅ Full CRUD for `users`/`accounts`/`payments`/`transfers`, backed by MongoDB (Atlas) with Auth0 JWT + Auth0 FGA object-level authorization — see `api/CLAUDE.md`. ✅ SCREENS.md gaps resolved 2026-07-27 (payment dispute fields, account lookup endpoint, server-side account number generation), now wired into `webapp/`. ✅ Transfers/payments now move real balance atomically on creation (2026-07-27) — see `api/CLAUDE.md` "Account Balance Mutation" |
+| Web | `webapp/` | Vue 3 + Fastify BFF | ✅ Login/session/debug working via BFF. ✅ Full SCREENS.md/THEME.md redesign shipped 2026-07-27 — 13 routes, master-detail Accounts, Transfers/Send/Cancel, Payment Contest, Activity, Dashboard analytics, all proxied through the BFF — see `webapp/CLAUDE.md` "Resolved" section. Adapted same-day to `api/`'s balance-mutation change (below). ✅ 2026-08-05: GDPR "Delete my account" wired on the Profile Danger Zone (soft-block + cascade via `api/`'s `DELETE /api/profile`, step-up MFA → confirm → delete → logout), and the account-delete flow simplified to a plain passthrough now that `api/` enforces the empty-balance guard server-side — see `webapp/CLAUDE.md`'s two 2026-08-05 "Resolved" sections |
+| API | `api/` | Fastify/JS + MongoDB | ✅ Full CRUD for `users`/`accounts`/`payments`/`transfers`, backed by MongoDB (Atlas) with Auth0 JWT + Auth0 FGA object-level authorization — see `api/CLAUDE.md`. ✅ SCREENS.md gaps resolved 2026-07-27 (payment dispute fields, account lookup endpoint, server-side account number generation), now wired into `webapp/`. ✅ Transfers/payments now move real balance atomically on creation (2026-07-27) — see `api/CLAUDE.md` "Account Balance Mutation". ✅ 2026-08-05: public `/api/test` debug route removed, GDPR `DELETE /api/profile` shipped (soft-block via Management API + cascade-delete owned Accounts/Payments/Transfers), and `DELETE /api/accounts/:id` now enforces the empty-balance guard server-side — see `api/CLAUDE.md`'s three 2026-08-05 "Resolved" sections |
 
 Each platform has its own `CLAUDE.md` with stack-specific details.
 Shared design decisions live here and in `THEME.md` / `SCREENS.md`.
@@ -73,7 +73,7 @@ Quick orientation:
 - Profile was redesigned around real ID token claims (standard + the `api://sheev/v1/` custom namespace) instead of a raw claims dump — that's `DebugScreen`'s job now.
 - `THEME.md` picked up explicit contrast rules (2026-07-27) after the live webapp shipped with under-contrast text — every platform's CLAUDE.md TODO section references this.
 
-**Build order for this round of changes, per explicit user preference:** `api/` → `webapp/` → `android/` → `ios/`. `api/` and `webapp/` are done as of 2026-07-27 (see their CLAUDE.md "Resolved" sections) — `android/` is next. Each repo's own `CLAUDE.md` has a dated TODO section with the concrete work items and open decisions for that repo — that's where to start in each one, not here.
+**Build order for this round of changes, per explicit user preference:** `api/` → `webapp/` → `android/` → `ios/`. `api/`, `webapp/`, and `android/` are done (`android/` as of 2026-08-04 — see its CLAUDE.md "Resolved" section) — this round is complete. See "Next Steps" below for the next round's order (which reprioritizes `ios/` behind further `api/`/`webapp/`/`android/` work). Each repo's own `CLAUDE.md` has a dated TODO section with the concrete work items and open decisions for that repo — that's where to start in each one, not here.
 
 ---
 
@@ -107,7 +107,13 @@ Quick orientation:
 | Firebase project + `google-services.json` | Android Guardian push |
 | APNs certificate/key configured on Auth0 | iOS Guardian push |
 | Amazon SNS → APNs endpoint registration | iOS Guardian push |
-| `api/` publicly reachable from mobile (not yet published anywhere Android/iOS can reach) | Wiring Android/iOS's new mock-data screens to real data — until then, build against mocks per each platform's `CLAUDE.md` TODO section |
+
+**Resolved 2026-08-03 (api/ reachability), superseded 2026-08-04 (Android):** `api/` is publicly
+reachable at `https://api.igbc.sheev.fr` (see "Deployment" above). `android/` wired its mock-data
+screens to the real API and shipped the full SCREENS.md/THEME.md redesign on 2026-08-04 — see
+`android/CLAUDE.md`'s "Resolved" section, no longer a TODO there. `ios/CLAUDE.md`'s TODO section
+still describes building against mocks; that's the one still-open case, next in the build order
+below.
 
 ---
 
@@ -119,17 +125,21 @@ Quick orientation:
 
 ---
 
-## Deployment (2026-08-01)
+## Deployment (2026-08-01 groundwork, live 2026-08-03)
 
-`api/` and `webapp/` now have Docker + AWS deployment tooling in place — **not yet actually
-deployed to AWS**, this is the groundwork (Dockerfiles, docs, secrets plan), not a live
-production status update to the Platforms table above.
+`api/` and `webapp/` are **live on AWS** as of 2026-08-03: `https://api.igbc.sheev.fr` (health
+check returns 200) and `https://igbc.sheev.fr` (login tested end-to-end and works). The
+2026-08-01 entry below describes the Docker/tooling groundwork that made this possible — treat
+both services as deployed, not pending, when planning further work.
 
-**Target:** `api/` → `https://api.igbc.sheev.fr`, `webapp/` → `https://igbc.sheev.fr`, both as
-**Amazon ECS Express Mode** services (Fargate) sharing one auto-provisioned ALB (host-header
-routed). Express Mode was chosen because **AWS App Runner stopped accepting new customers as of
-2026-04-30** — it's AWS's recommended replacement and needs a container image rather than
-building from source, hence the Dockerfiles.
+**Live:** `api/` → `https://api.igbc.sheev.fr`, `webapp/` → `https://igbc.sheev.fr`, both running
+as **Amazon ECS Express Mode** services (Fargate), sharing one auto-provisioned ALB (host-header
+routed, SNI-serving two separate ACM certs off one HTTPS listener). Express Mode was chosen because
+**AWS App Runner stopped accepting new customers as of 2026-04-30** — it's AWS's recommended
+replacement and needs a container image rather than building from source, hence the Dockerfiles.
+Route 53 alias records in the `sheev.fr` hosted zone point both hostnames at the ALB. Redeploys use
+`aws-redeploy.sh <api|webapp>` per each service's `DEPLOYMENT.md` step 5 — the ALB, certs, and DNS
+records already exist and don't need recreating.
 
 - **Docs are split by scope, not by platform-and-scope:** `IGBC/DEPLOYMENT.md` is **local-only**
   (Docker run steps for `api/`/`webapp/`, plus native build/run steps for `android/`/`ios/`).
@@ -172,6 +182,79 @@ building from source, hence the Dockerfiles.
   (Okta's decryption proxy CA chain) fixes this via `NODE_EXTRA_CA_CERTS`, already wired into
   `local-deploy.sh` and documented in `IGBC/DEPLOYMENT.md`. This is an AWS-deployment non-issue —
   Fargate tasks won't sit behind this proxy.
+
+---
+
+## Considered — SCA via PAR + RAR for step-up MFA (discussed 2026-08-03, not yet built)
+
+`webapp`'s current step-up MFA (`silentLogin()` + `acr_values`, see `webapp/CLAUDE.md` "Resolved —
+Silent login mechanism") proves "the user did MFA during this flow," but isn't bound to *what*
+they approved — the transaction fields (amount, destination account) travel as a client-controlled
+`returnTo` query string that `api/` never re-validates against the token. Closing that gap
+(PSD2-style "dynamic linking", the actual substance of Strong Customer Authentication) would mean:
+
+- **PAR** (`/oauth/par`): the BFF (a confidential client — already holds the client secret) would
+  push the transaction server-to-server, get back a one-time `request_uri` (30s TTL, fixed), and
+  redirect the browser with just `client_id`+`request_uri` — no transaction details ever touch the
+  browser URL, history, or referrer headers. **Public clients (SPAs) are excluded from PAR** —
+  irrelevant here since the BFF pattern already fits, but worth remembering if this pattern is ever
+  proposed for a client-only flow.
+- **RAR** (`authorization_details`): the transaction itself becomes a structured, pre-registered
+  type (e.g. `money_transfer`) on the `api://sheev/v1` resource server (via Dashboard or a
+  Management API `PATCH`) instead of loose query params. Auth0 caps this at 5KB total / 5 entries /
+  10 properties per entry / 255 chars per value — comfortably enough for a transfer payload.
+- **The actual dynamic-linking mechanism:** setting the resource server's `consent_policy` to
+  `transactional-authorization-with-mfa` exposes a `linking_id` + `event.transaction.
+  requested_authorization_details` to a Post-Login Action — that's what would drive the MFA
+  challenge, and could render the real amount/destination on the Guardian push notification itself
+  ("Approve sending 100 cred to IGBC-00000002?"), since Guardian/SNS push is already wired for
+  Android/iOS.
+- **The piece Auth0 config alone doesn't solve:** `api/`'s `POST /api/transfers` (and similarly
+  `/api/payments`) would still need new code to verify the presented token's approved
+  `authorization_details` actually matches the transfer being created. Without that check, all the
+  PAR/RAR ceremony proves "a transaction was shown to the user," not "*this* transaction was
+  approved" — the enforcement point is genuinely new work, not a side effect of Auth0 config.
+
+**Blocker to verify before scoping real work:** PAR sits behind Auth0's **Highly Regulated
+Identity** add-on (Enterprise plan) — confirm the `sheev.fr` tenant actually has it first.
+
+**Scope:** spans all three repos — `webapp/` (BFF), `Auth0/` (Post-Login Actions + resource server
+config), and `api/` (new authorization_details enforcement) — real implementation needs to be
+scoped per-repo, not done in one session, per the cross-repo boundary the user prefers (see
+`webapp/`'s memory `feedback_cross_repo_session_boundary`).
+
+---
+
+## Next Steps (planned 2026-08-04 — picking up next session)
+
+Ordered roadmap for the next round of work, agreed after the Android real-API migration landed.
+Supersedes the "Build order" note above for anything beyond that already-completed round.
+
+1. ~~`api/` — remove the public `/api/test` debug-dump route~~ — done 2026-08-05, see
+   `api/CLAUDE.md`.
+2. ~~`api/` — GDPR account-deletion endpoint~~ — done 2026-08-05: soft-block (not hard-delete) +
+   cascade-delete owned Accounts/Payments/Transfers, `User` doc left alone — see `api/CLAUDE.md`
+   "Resolved — GDPR account deletion".
+3. ~~`webapp/` — revisit its account-delete flow~~ — done 2026-08-05: the empty-balance guard
+   moved server-side into `api/`'s `DELETE /api/accounts/:id` (see `api/CLAUDE.md` "Resolved —
+   Balance guard on account deletion"), `webapp/`'s BFF proxy simplified to a plain passthrough
+   (see `webapp/CLAUDE.md` "Resolved — Account-delete flow simplified..."), and the GDPR
+   "Delete my account" flow wired up on the Profile Danger Zone against `api/`'s new
+   `DELETE /api/profile` (see `webapp/CLAUDE.md` "Resolved — Wire up 'Delete my account'..."). This
+   is now the reference implementation for #4/#5 below — mirror the enforcement location (`api/`
+   only, no client-side pre-check) and the step-up MFA → confirm → delete → logout UI shape.
+4. `android/` — delete/close account, step-up MFA (SCA), real Profile/Consent update wiring —
+   mirror `webapp/`'s now-settled pattern from #3 (server-side balance guard, GDPR delete via
+   `DELETE /api/profile`) — see `android/CLAUDE.md`'s "TODO — Next round".
+5. `ios/` — wire to the live `api/` with the full SCREENS.md/THEME.md redesign, built with
+   step-up MFA, delete/close account, and real Profile/Consent wiring included from the start —
+   parity with Android's finished state, not a later retrofit like Android's own path here — see
+   `ios/CLAUDE.md`'s TODO section.
+6. Guardian push prerequisites — Firebase project (Android), APNs cert/key + SNS endpoint (iOS).
+7. Cross-repo SCA via PAR + RAR for step-up MFA dynamic-linking — see "Considered" above; confirm
+   the Highly Regulated Identity add-on on the tenant first.
+8. `mcp/` — resolve its open pending decisions and start building.
+9. `architecture.html` — finish the diagram update.
 
 ---
 
