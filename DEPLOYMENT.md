@@ -146,5 +146,7 @@ xcodebuild -scheme IGBC -destination 'platform=iOS Simulator,name=iPhone 16' tes
 open IGBC.xcodeproj   # then use Xcode's ▶ Run button
 ```
 
-Same caveat as Android: login + the original 7 screens are real, the newer redesigned screens run
-on mock data pending `api/` being reachable from mobile. See `ios/CLAUDE.md`'s TODO section.
+Fully wired to the live `api/` (`https://api.igbc.sheev.fr`) as of 2026-08-05 — no mock data. MFA
+enrollment/removal (including Guardian push) goes through `api/`'s Management-API-backed routes via
+a browser-opened ticket URL; there's no on-device Guardian SDK to configure (removed 2026-08-06).
+See `ios/CLAUDE.md`'s two 2026-08-05/2026-08-06 "Resolved" sections.

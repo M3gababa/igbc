@@ -9,8 +9,8 @@ The IGBC (Star Wars — InterGalactic Banking Clan) theme is a story wrapper for
 
 | Platform | Folder | Stack | Status |
 |---|---|---|---|
-| Android | `android/` | Kotlin, Jetpack Compose, Koin | ✅ Fully wired to the live `api/` — SCREENS.md/THEME.md nav redesign, real data, and Management-API-backed Security/MFA/sessions all shipped 2026-08-04, with `webapp/` parity on Security but not yet on Profile edit/consent (still decorative on Android) or step-up MFA on mutations. Guardian still stubbed pending Firebase — see `android/CLAUDE.md`'s "Resolved" section |
-| iOS | `ios/` | Swift, SwiftUI | ✅ Login (custom scheme, temporary) + original 7 screens working, Guardian stubbed pending APNs — see `ios/CLAUDE.md`. 🔧 Nav/screen UX redesign pending (mock data, no live API from mobile yet) — see `ios/CLAUDE.md` TODO section |
+| Android | `android/` | Kotlin, Jetpack Compose, Koin | ✅ Fully wired to the live `api/` — SCREENS.md/THEME.md nav redesign, real data, Management-API-backed Security/MFA/sessions all shipped 2026-08-04. ✅ 2026-08-05: delete/close account, step-up MFA (SCA) on the same 3 call sites as webapp/iOS, and real Profile edit + Consent Management wiring (`EditProfileScreen`, `GET`/`PUT /api/profile`) all shipped too — full parity with `webapp/`/`ios/`, nothing decorative left. Guardian still stubbed pending Firebase — kept on the native-SDK path deliberately, not switching to iOS's ticket-URL simplification — see `android/CLAUDE.md`'s "Resolved" section |
+| iOS | `ios/` | Swift, SwiftUI | ✅ Fully wired to the live `api/` — SCREENS.md/THEME.md nav redesign, real data, step-up MFA, delete/close account, and real Profile/Consent wiring all shipped 2026-08-05 (parity with Android/webapp built in from the start, not a later retrofit). ⚠️ 2026-08-06: on-device Guardian SDK removed (personal-team code-signing wall on Push Notifications capability + a `Result` type collision with Guardian.swift) and **temporarily** replaced with Management-API-backed ticket-URL enrollment for every MFA factor. **User confirmed same day the native SDK will be reintroduced** once the Apple Developer Program is purchased (fixes the signing wall) — see "Prerequisites Not Yet Completed" §1.3 for the re-add plan and `ios/CLAUDE.md`'s two 2026-08-05/2026-08-06 "Resolved" sections for what's there today |
 | Web | `webapp/` | Vue 3 + Fastify BFF | ✅ Login/session/debug working via BFF. ✅ Full SCREENS.md/THEME.md redesign shipped 2026-07-27 — 13 routes, master-detail Accounts, Transfers/Send/Cancel, Payment Contest, Activity, Dashboard analytics, all proxied through the BFF — see `webapp/CLAUDE.md` "Resolved" section. Adapted same-day to `api/`'s balance-mutation change (below). ✅ 2026-08-05: GDPR "Delete my account" wired on the Profile Danger Zone (soft-block + cascade via `api/`'s `DELETE /api/profile`, step-up MFA → confirm → delete → logout), and the account-delete flow simplified to a plain passthrough now that `api/` enforces the empty-balance guard server-side — see `webapp/CLAUDE.md`'s two 2026-08-05 "Resolved" sections |
 | API | `api/` | Fastify/JS + MongoDB | ✅ Full CRUD for `users`/`accounts`/`payments`/`transfers`, backed by MongoDB (Atlas) with Auth0 JWT + Auth0 FGA object-level authorization — see `api/CLAUDE.md`. ✅ SCREENS.md gaps resolved 2026-07-27 (payment dispute fields, account lookup endpoint, server-side account number generation), now wired into `webapp/`. ✅ Transfers/payments now move real balance atomically on creation (2026-07-27) — see `api/CLAUDE.md` "Account Balance Mutation". ✅ 2026-08-05: public `/api/test` debug route removed, GDPR `DELETE /api/profile` shipped (soft-block via Management API + cascade-delete owned Accounts/Payments/Transfers), and `DELETE /api/accounts/:id` now enforces the empty-balance guard server-side — see `api/CLAUDE.md`'s three 2026-08-05 "Resolved" sections |
 
@@ -102,18 +102,179 @@ Quick orientation:
 
 ## Prerequisites Not Yet Completed
 
-| Item | Needed for |
-|---|---|
-| Firebase project + `google-services.json` | Android Guardian push |
-| APNs certificate/key configured on Auth0 | iOS Guardian push |
-| Amazon SNS → APNs endpoint registration | iOS Guardian push |
+**Resolved 2026-08-03 (api/ reachability), superseded 2026-08-04 (Android), superseded 2026-08-05
+(iOS):** `api/` is publicly reachable at `https://api.igbc.sheev.fr` (see "Deployment" above).
+`android/` wired its mock-data screens to the real API and shipped the full SCREENS.md/THEME.md
+redesign on 2026-08-04, then delete/close account + step-up MFA + real Profile/Consent wiring on
+2026-08-05. `ios/` did the full redesign + that same feature set together on 2026-08-05. Neither
+`android/CLAUDE.md` nor `ios/CLAUDE.md` has an open "mock data" TODO anymore.
 
-**Resolved 2026-08-03 (api/ reachability), superseded 2026-08-04 (Android):** `api/` is publicly
-reachable at `https://api.igbc.sheev.fr` (see "Deployment" above). `android/` wired its mock-data
-screens to the real API and shipped the full SCREENS.md/THEME.md redesign on 2026-08-04 — see
-`android/CLAUDE.md`'s "Resolved" section, no longer a TODO there. `ios/CLAUDE.md`'s TODO section
-still describes building against mocks; that's the one still-open case, next in the build order
-below.
+The one prerequisite still genuinely open is **real Guardian push notifications** — split below
+into what needs external setup (1.1) vs. what each app's own code needs (1.2/1.3), per the user's
+2026-08-06 request. **iOS is a special case, but the decision is now made (2026-08-06):** its
+on-device Guardian SDK was fully removed 2026-08-06 (personal-team code-signing wall + a `Result`
+type name collision with Guardian.swift — see `ios/CLAUDE.md`'s 2026-08-06 "Resolved" section) and
+temporarily replaced with browser-ticket-URL enrollment via `api/`'s Management API routes. **The
+user has since confirmed the native SDK will be reintroduced** — so 1.1's Apple Developer Program
+purchase and 1.3's iOS code changes are both in scope, not conditional. That purchase is what
+actually fixes the signing blocker that caused the removal in the first place; skipping it would
+just reproduce the same failure. Android was never blocked that way and can proceed on 1.1/1.2
+independently of when the iOS purchase happens.
+
+### 1.1 — External prerequisites: what to create/buy/configure
+
+Nothing here can be done by editing code — these are console/account/purchase actions on Firebase,
+Apple, AWS, and the Auth0 Dashboard. Do these before touching either app's source.
+
+**Firebase (Android only):**
+- Create a Firebase project (console.firebase.google.com) and add an Android app to it with package
+  name `com.sheev.igbc` (must match exactly — see `CLAUDE.md`'s shared "App package / Bundle ID").
+- Download the generated `google-services.json` and place it at `android/app/google-services.json`
+  (gitignored, same treatment as `Auth0.plist`/other credential files — confirm it's covered by
+  `android/.gitignore` before committing anything else in that repo).
+- In Firebase Console → Project Settings → **Cloud Messaging**, confirm the Firebase Cloud
+  Messaging API (V1) is enabled (the legacy HTTP/Server-Key API Google deprecated in June 2024 is
+  no longer an option — Auth0's dashboard field for this expects the newer Service Account key, not
+  the old Server Key string).
+- In Firebase Console → Project Settings → **Service Accounts**, click "Generate New Private Key" —
+  this downloads a JSON credential file. This file (not `google-services.json`) is what gets
+  uploaded to Auth0's Dashboard in the Android App Configuration step below.
+
+**Apple Developer Program (iOS — confirmed 2026-08-06, the native SDK is being reintroduced):**
+- Buy/enroll in the paid **Apple Developer Program** ($99/year). This is the actual fix for the
+  blocker that caused the 2026-08-06 removal — Push Notifications as a capability fails automatic
+  code-signing on a free "Personal Team." Without this purchase, none of 1.3 below is buildable on
+  a physical device (Simulator can't receive real APNs pushes either way).
+- Once enrolled, in Xcode → Signing & Capabilities for the `IGBC` target, switch the team to the
+  paid one and add the **Push Notifications** capability — this regenerates `IGBC.entitlements`
+  with an `aps-environment` key (`development` for Xcode/ad-hoc builds, `production` for
+  TestFlight/App Store).
+- Generate APNs credentials from the Apple Developer portal: create a new APNs certificate (or the
+  newer `.p8` auth key — confirm which format the current Auth0 Dashboard field accepts, since
+  Auth0's docs describe the older P12-certificate flow below). For the P12 path: install the
+  generated certificate locally, locate "Apple Push Services: {AppId}" (or "Apple Sandbox Push
+  Services: {AppId}" for dev) in Keychain Access, and export certificate + private key together as
+  a `Certificates.p12` with **no password**. Auth0's docs additionally recommend re-encoding it to
+  Triple DES via OpenSSL (extract key and cert separately, re-combine, discard the original) — do
+  this only if the plain export is rejected on upload.
+- Register the app's **Team ID + Bundle ID** under Auth0 Dashboard → Applications → the iOS Native
+  app → Advanced Settings → Device Settings (this is also required for the still-deferred Universal
+  Links switch documented earlier in this file — one less thing to redo if that ever happens too).
+
+**AWS (both platforms, since Auth0 routes Guardian push through Amazon SNS):**
+- Create (or reuse) an IAM user/access key with SNS mobile-push permissions: at minimum
+  `sns:CreatePlatformApplication`, `sns:SetPlatformApplicationAttributes`,
+  `sns:GetPlatformApplicationAttributes`, `sns:DeletePlatformApplication`,
+  `sns:CreatePlatformEndpoint`, `sns:GetEndpointAttributes`, `sns:SetEndpointAttributes`,
+  `sns:DeleteEndpoint`, and `sns:Publish`. Auth0/Guardian creates the per-device Platform
+  Application **endpoints** automatically at enrollment time using these credentials — you don't
+  need to pre-create individual device endpoints yourself, just the IAM identity with permission to
+  do so.
+- Record the Access Key ID, Secret Access Key, and AWS Region you'll use — these three values go
+  directly into the Auth0 Dashboard (next section), not into either app's code or config.
+- Given [[feedback_demo_infra_simplicity]]'s existing rule (every env var goes into Secrets
+  Manager, not just "secret" ones), plan to add these three SNS values there once real testing
+  starts, matching how `api/`/`webapp/`'s other tenant config is already handled.
+
+**Auth0 Dashboard (ties the above together — do this last):**
+- Security → Multi-factor Auth → enable **Push Notifications** (Guardian), then switch it from the
+  default Auth0-hosted dev service to **Custom** → **Amazon SNS**, and fill in the AWS Access Key
+  ID / Secret Access Key / Region from above. Save.
+- Still under Custom, an **Android App Configuration** section appears: toggle it enabled, provide
+  a Play Store URL (a placeholder is fine for this demo tenant — it's just a link shown to
+  end-users during enrollment), and upload the Firebase **Service Account** JSON from the Firebase
+  step above (labeled "FCM Server Credentials" in the Dashboard).
+- An **iOS App Configuration** section (only needed if 1.3 is in scope): toggle it enabled, provide
+  an App Store URL placeholder, the APNs Bundle ID (`com.sheev.igbc`), upload the P12 certificate
+  from the Apple step above, and set the iOS App Environment (sandbox vs. production) to match
+  which `aps-environment` value the Xcode build actually uses.
+- **Verify current tenant state before assuming a blank slate** — Android's Guardian factor may
+  already be toggled on against Auth0's default (non-SNS) dev push service from earlier
+  experimentation; check what's already configured rather than re-doing steps that are done.
+
+### 1.2 — Android application changes required
+
+Confirmed against the actual current source (not just the CLAUDE.md description) — the scaffolding
+already exists and is deliberately stubbed pending 1.1 above:
+- `app/build.gradle.kts` already depends on `com.auth0.android:guardian:0.7.0` (with the
+  `okhttp-bom` exclusion workaround from "Build Environment Notes" above) — the SDK dependency
+  itself needs no change.
+- `AndroidManifest.xml` already has a **commented-out** `<service>` block for a
+  `.push.IgbcMessagingService` FCM listener, with a comment saying to uncomment once
+  `google-services.json` is added — that class doesn't exist yet and needs to be written.
+- `GuardianRepositoryImpl.kt` (`data/repository/`) has real method signatures but every body is a
+  `TODO`/`NotImplementedError` stub: `enroll()`, `removeEnrollment()` (only clears local
+  `SharedPreferences` today, never tells the Auth0 server), `allowChallenge()`, `denyChallenge()`.
+  `EnrollmentViewModel`/`GuardianViewModel` are thin real ViewModels already wired to call through
+  to this repository — they don't need rework, just a working repository underneath.
+
+What still needs writing:
+1. Add the Google Services Gradle plugin (`com.google.gms.google-services`) to the top-level and
+   app-level `build.gradle.kts`, plus the Firebase BoM + `firebase-messaging` dependency in
+   `libs.versions.toml`.
+2. Write `push/IgbcMessagingService.kt extends FirebaseMessagingService`: `onNewToken(token)` should
+   refresh the stored Guardian device token if already enrolled; `onMessageReceived(message)` should
+   call `Guardian.parseNotification(message.data)` — a null result means it wasn't a Guardian push
+   and should fall through untouched, a non-null result should route to `MfaApprovalScreen`
+   (already scaffolded per the file tree, currently unimplemented) via the same
+   `MainActivity`-reads-the-intent pattern `SCREENS.md` already describes for this flow.
+3. Uncomment the `<service>` block in `AndroidManifest.xml` once that class exists.
+4. Implement `GuardianRepositoryImpl.enroll(fcmToken)`: build a `Guardian.Builder().domain("auth.sheev.fr").build()`
+   instance, generate a 2048-bit RSA key pair (needs real Keystore-backed storage — today's
+   plain-`SharedPreferences` persistence won't safely hold a private key; this is genuinely new
+   design, not just wiring), get the enrollment ticket by reusing the **existing**
+   `SecurityRepository` call to `api/`'s `/api/security/mfa/enroll` with the push/Guardian factor
+   key (same endpoint the other 3 factors already use — no `api/` changes needed), and pass the
+   response's `ticket_url` as the `enrollmentUri` into `Guardian.enroll(uri, currentDevice,
+   keyPair)`. Persist the resulting `Enrollment` (id, token) alongside the key pair reference.
+5. Implement `removeEnrollment()` to actually call `guardian.delete(enrollment)` against Auth0
+   before clearing local prefs — today it only does the local half.
+6. Implement `allowChallenge()`/`denyChallenge()` via
+   `guardian.authentication(...).allow(notification)` / `.reject(notification, reason)`, matching
+   the parsed notification's `enrollmentId` against the one stored enrollment.
+7. Request the Android 13+ `POST_NOTIFICATIONS` runtime permission somewhere in the app-start/login
+   flow — without it, a background/killed-app push won't surface a system notification at all, only
+   `onMessageReceived` while the process is alive. Decide whether `IgbcMessagingService` needs to
+   post its own visible `Notification` (tapping into `MfaApprovalScreen`) for the killed-app case —
+   this is an open design question, not something already solved by the current stub.
+
+### 1.3 — iOS application changes required
+
+This is a **re-add**, not new design — Guardian.swift was fully wired once (2026-08-05) before
+being removed the next day. The removal note in `ios/CLAUDE.md` names exactly what has to be done
+differently this time to avoid repeating both failures:
+1. Complete 1.1's Apple Developer Program purchase first — re-enabling the Push Notifications
+   capability in Xcode will fail signing again on a free team, same as last time.
+2. Re-add the Guardian.swift SPM package dependency (Package.swift / Xcode package list).
+3. Re-enable **Push Notifications** in Xcode → Signing & Capabilities, regenerating
+   `IGBC.entitlements` with `aps-environment` set appropriately for the build config.
+4. Reintroduce an `AppDelegate`/`UIApplicationDelegate` (needed for push registration even in a
+   SwiftUI-lifecycle app) implementing `didRegisterForRemoteNotificationsWithDeviceToken:` (capture
+   the hex APNs token), `didFailToRegisterForRemoteNotificationsWithError:`, and a
+   `UNUserNotificationCenterDelegate` to intercept incoming pushes via `Guardian.notification(from:)`.
+   Call `UIApplication.shared.registerForRemoteNotifications()` plus a `UNUserNotificationCenter`
+   authorization request (`.alert, .sound, .badge`) early in app launch.
+5. Re-add the deleted pieces: `Guardian/GuardianRepository.swift`/`GuardianRepositoryImpl.swift`,
+   `Models/GuardianChallenge.swift`, `Views/Guardian/`, `Views/Enrollment/`, `Views/MFAApproval/`,
+   `PendingChallengeStore.swift`, `AppDependencies`' `guardianRepository`/`pendingChallengeStore`,
+   `AppRouter`'s `.fullScreenCover` push-challenge presentation, and `OthersView`'s "Guardian" tile
+   — check git history for the pre-2026-08-06 versions of these files as a starting point rather
+   than rebuilding from scratch.
+6. **Fix the actual root cause of the 2026-08-06 removal this time**, don't just re-add the same
+   code: `import Guardian` shadows Swift's stdlib `Result<Success,Failure>` with Guardian.swift's
+   own single-generic `Result<T>`. Disambiguate every affected `Result<Void, GuardianRepositoryError>`
+   with the fully-qualified `Swift.Result<...>` (or a project-wide `typealias` for it) instead of
+   the bare `Result` that broke the build last time.
+7. Enrollment ticket flow mirrors Android exactly: reuse the existing `SecurityRepository` call to
+   `api/`'s `/api/security/mfa/enroll` (no `api/` changes needed), pass the returned `ticket_url` as
+   `usingUri:` into `Guardian.enroll(forDomain:usingUri:notificationToken:signingKey:verificationKey:)`.
+   Use `KeychainRSAPrivateKey.new(with: "tag")` for the signing key — Keychain-backed, an
+   improvement over Android's current raw-`SharedPreferences` approach for the equivalent secret.
+8. Push-challenge resolution: `Guardian.authentication(forDomain:device:).allow(notification:)` /
+   `.reject(notification:reason:)`, gated on matching `notification.enrollmentId` against the one
+   stored enrollment (same single-enrollment assumption as Android, appropriate for this demo).
+9. Testing requires a **physical device** provisioned under the paid Apple Developer team —
+   Simulator cannot receive real APNs pushes, so this can't be verified end-to-end without one.
 
 ---
 
@@ -243,14 +404,24 @@ Supersedes the "Build order" note above for anything beyond that already-complet
    `DELETE /api/profile` (see `webapp/CLAUDE.md` "Resolved — Wire up 'Delete my account'..."). This
    is now the reference implementation for #4/#5 below — mirror the enforcement location (`api/`
    only, no client-side pre-check) and the step-up MFA → confirm → delete → logout UI shape.
-4. `android/` — delete/close account, step-up MFA (SCA), real Profile/Consent update wiring —
-   mirror `webapp/`'s now-settled pattern from #3 (server-side balance guard, GDPR delete via
-   `DELETE /api/profile`) — see `android/CLAUDE.md`'s "TODO — Next round".
-5. `ios/` — wire to the live `api/` with the full SCREENS.md/THEME.md redesign, built with
-   step-up MFA, delete/close account, and real Profile/Consent wiring included from the start —
-   parity with Android's finished state, not a later retrofit like Android's own path here — see
-   `ios/CLAUDE.md`'s TODO section.
-6. Guardian push prerequisites — Firebase project (Android), APNs cert/key + SNS endpoint (iOS).
+4. ~~`android/` — delete/close account, step-up MFA (SCA), real Profile/Consent update wiring~~ —
+   done 2026-08-05, mirroring `webapp/`'s pattern from #3 — see `android/CLAUDE.md`'s "Resolved —
+   Account deletion, step-up MFA, real Profile update" section.
+5. ~~`ios/` — wire to the live `api/` with the full SCREENS.md/THEME.md redesign, built with
+   step-up MFA, delete/close account, and real Profile/Consent wiring included from the start~~ —
+   done 2026-08-05 (parity with Android's then-finished state, not a later retrofit). Then went
+   further on 2026-08-06 by dropping the on-device Guardian SDK entirely in favor of
+   Management-API-backed enroll/remove (see Platform table above and `ios/CLAUDE.md`'s two
+   "Resolved" sections). **User explicitly declined (2026-08-06) to have `android/` follow this
+   simplification** — Android stays on the native Guardian SDK path pending Firebase, by choice,
+   not oversight.
+6. Guardian push prerequisites — split 2026-08-06 into "Prerequisites Not Yet Completed" above:
+   1.1 (Firebase/Apple/AWS/Auth0 Dashboard setup — none of it code), 1.2 (`android/` code changes,
+   required — Android was never blocked and stays on the native SDK path), and 1.3 (`ios/` code
+   changes). **User confirmed 2026-08-06 that iOS will reintroduce the native Guardian SDK it
+   dropped that same day** — so the Apple Developer Program purchase and 1.3's re-add work are both
+   in scope, not conditional; the temporary Management-API-ticket-URL enrollment is a stopgap until
+   this lands, not the permanent iOS approach.
 7. Cross-repo SCA via PAR + RAR for step-up MFA dynamic-linking — see "Considered" above; confirm
    the Highly Regulated Identity add-on on the tenant first.
 8. `mcp/` — resolve its open pending decisions and start building.
